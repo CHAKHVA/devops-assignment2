@@ -1,0 +1,11 @@
+groups:
+  - name: app_alerts
+    rules:
+      - alert: HighErrorRate
+        expr: rate(app_errors_total[1m]) > 5
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: 'Application error rate has exceeded 5 errors/min (current: {{ $value | printf "%.2f" }})'
