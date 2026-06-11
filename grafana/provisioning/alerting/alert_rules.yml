@@ -1,0 +1,52 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: Flask App Alerts
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: high-error-rate
+        title: HighErrorRate
+        condition: C
+        data:
+          - refId: A
+            queryType: ""
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: rate(app_errors_total[1m]) * 60
+              refId: A
+              instant: false
+          - refId: C
+            queryType: ""
+            relativeTimeRange:
+              from: 60
+              to: 0
+            datasourceUid: "__expr__"
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 5
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - A
+                  reducer:
+                    type: last
+                  type: query
+              refId: C
+              type: classic_conditions
+        noDataState: NoData
+        execErrState: Error
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: High error rate detected
+          description: Application error rate has exceeded 5 errors per minute.
