@@ -33,18 +33,38 @@ curl -fsS "http://localhost:${APP_PORT}/metrics" | grep -q "app_requests_total" 
   && echo "    /metrics OK" \
   || { echo "FAIL: /metrics missing expected data" >&2; exit 1; }
 
-echo "==> Checking container health status"
-unhealthy=0
-while read -r name status; do
-  case "$status" in
-    healthy|"") echo "    ${name}: ${status:-no healthcheck}" ;;
-    *) echo "    ${name}: ${status}" >&2; unhealthy=1 ;;
-  esac
-done < <(docker compose ps --format '{{.Service}} {{.Health}}')
+echo "==> Waiting for container health to settle"
+health_deadline=$((SECONDS + TIMEOUT))
+while true; do
+  starting=0
+  unhealthy=0
+  statuses=""
+  while read -r name status; do
+    statuses+="    ${name}: ${status:-no healthcheck}"$'\n'
+    case "$status" in
+      healthy|"") ;;
+      starting) starting=1 ;;
+      *) unhealthy=1 ;;
+    esac
+  done < <(docker compose ps --format '{{.Service}} {{.Health}}')
 
-if (( unhealthy != 0 )); then
-  echo "FAIL: one or more containers are not healthy" >&2
-  exit 1
-fi
+  if (( unhealthy == 1 )); then
+    printf "%s" "$statuses" >&2
+    echo "FAIL: one or more containers reported unhealthy" >&2
+    exit 1
+  fi
+
+  if (( starting == 0 )); then
+    printf "%s" "$statuses"
+    break
+  fi
+
+  if (( SECONDS >= health_deadline )); then
+    printf "%s" "$statuses" >&2
+    echo "FAIL: containers did not become healthy within ${TIMEOUT}s" >&2
+    exit 1
+  fi
+  sleep "$INTERVAL"
+done
 
 echo "==> Verification passed. Stack is healthy."
