@@ -1,0 +1,11 @@
+**/__pycache__/
+**/*.pyc
+**/tests/
+.git/
+.github/
+.venv/
+venv/
+.env
+*.md
+screenshots/
+docs/

@@ -9,3 +9,32 @@ groups:
         annotations:
           summary: "High error rate detected"
           description: 'Application error rate has exceeded 5 errors/min (current: {{ $value | printf "%.2f" }})'
+
+      - alert: HighRequestLatency
+        expr: histogram_quantile(0.95, sum(rate(app_request_latency_seconds_bucket[5m])) by (le, endpoint)) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p95 request latency"
+          description: 'p95 latency on {{ $labels.endpoint }} is above 500ms (current: {{ $value | printf "%.3f" }}s)'
+
+  - name: infrastructure_alerts
+    rules:
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Scrape target down"
+          description: "{{ $labels.job }} target {{ $labels.instance }} has been unreachable for over 1 minute."
+
+      - alert: ContainerHighMemory
+        expr: (sum(container_memory_usage_bytes{name!=""}) by (name) / 1e9) > 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container using high memory"
+          description: "Container {{ $labels.name }} is using more than 1GB of memory."

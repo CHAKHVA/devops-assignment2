@@ -1,0 +1,17 @@
+# Gitleaks configuration. Extends the default ruleset and adds an allowlist for
+# the intentional placeholder secrets used in example/config files.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Ignore documented placeholders and example env values"
+paths = [
+  '''\.env\.example''',
+  '''README\.md''',
+]
+regexes = [
+  '''change-me-please''',
+  '''GF_SECURITY_ADMIN_PASSWORD=\$\{''',
+  # docker-compose default admin password fallback in docs/older references
+  '''admin''',
+]

@@ -1,0 +1,21 @@
+# Local secrets / environment
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Security scan reports
+*-report.json
+trivy-report.*
+gitleaks-report.*
+
+# Local deploy state (image tag tracking for rollback)
+.deploy/
+
+# OS
+.DS_Store
