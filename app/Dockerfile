@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.14-slim
 
 # Do not buffer stdout/stderr so JSON logs are flushed immediately for Promtail.
 ENV PYTHONUNBUFFERED=1 \
