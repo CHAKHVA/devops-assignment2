@@ -29,6 +29,13 @@ until curl -fsS "http://localhost:${APP_PORT}/health" >/dev/null 2>&1; do
 done
 echo "    /health OK"
 
+# Exercise the root endpoint before checking /metrics. Under prometheus_client
+# multiprocess mode a metric series is only emitted once a worker has observed
+# it, so we generate one request to guarantee app_requests_total exists.
+curl -fsS "http://localhost:${APP_PORT}/" >/dev/null 2>&1 \
+  && echo "    / OK" \
+  || { echo "FAIL: / did not respond" >&2; exit 1; }
+
 curl -fsS "http://localhost:${APP_PORT}/metrics" | grep -q "app_requests_total" \
   && echo "    /metrics OK" \
   || { echo "FAIL: /metrics missing expected data" >&2; exit 1; }
