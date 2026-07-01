@@ -1,13 +1,16 @@
 import json
 import logging
+import os
 import time
 
 from flask import Flask
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
+    CollectorRegistry,
     Counter,
     Histogram,
     generate_latest,
+    multiprocess,
 )
 
 app = Flask(__name__)
@@ -67,7 +70,16 @@ def health():
 
 @app.route("/metrics")
 def metrics():
-    return generate_latest(), 200, {"Content-Type": CONTENT_TYPE_LATEST}
+    # Under gunicorn with multiple workers, each worker keeps its own metrics.
+    # When PROMETHEUS_MULTIPROC_DIR is set, aggregate all workers' metrics so
+    # the scrape reflects the whole app rather than a single worker.
+    if os.environ.get("PROMETHEUS_MULTIPROC_DIR"):
+        registry = CollectorRegistry()
+        multiprocess.MultiProcessCollector(registry)
+        data = generate_latest(registry)
+    else:
+        data = generate_latest()
+    return data, 200, {"Content-Type": CONTENT_TYPE_LATEST}
 
 
 if __name__ == "__main__":
